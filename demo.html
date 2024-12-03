@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Contact Footer Demo</title>
+        <style>
+            body {
+                margin: 0;
+                padding: 0;
+                min-height: 100vh;
+                display: flex;
+                flex-direction: column;
+                font-family: 'Courier New', monospace;
+                background: #1a1a1a;
+                color: #33ff33;
+            }
+            main {
+                flex: 1;
+                padding: 2rem;
+            }
+            h1 {
+                text-align: center;
+                color: #33ff33;
+                text-shadow: 0 0 5px #33ff33;
+            }
+            contact-footer {
+                position: fixed;
+                bottom: 0;
+                width: 100%;
+            }
+        </style>
+        <script type="module">
+            import {ContactFooter} from 'https://esm.sh/gh/triptych/awweb/contact-footer.js';
+        </script>
+    </head>
+    <body>
+        <main>
+            <h1>Contact Footer Demo</h1>
+        </main>
+        <contact-footer></contact-footer>
+    </body>
+</html>
