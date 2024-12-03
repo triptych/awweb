@@ -3,14 +3,51 @@ class ContactFooter extends HTMLElement {
     super();
     this.attachShadow({ mode: 'open' });
     this.contactData = null;
+    this.blogData = null;
     this.retryCount = 0;
     this.maxRetries = 3;
     this.currentLinkIndex = 0;
+    this.currentBlogIndex = 0;
   }
 
   async connectedCallback() {
     this.render();
-    await this.fetchContactData();
+    try {
+      console.log('Initializing footer...');
+      const [contactData, blogData] = await Promise.all([
+        this.fetchData('contact.json'),
+        this.fetchData('blog.json')
+      ]);
+
+      console.log('Contact data loaded:', contactData);
+      console.log('Blog data loaded:', blogData);
+
+      this.contactData = contactData;
+      this.blogData = blogData;
+
+      this.updateContent();
+      this.startRotation();
+      this.startBlogTicker();
+    } catch (error) {
+      console.error('Error initializing footer:', error);
+      this.showError();
+    }
+  }
+
+  async fetchData(url) {
+    console.log(`Fetching data from ${url}...`);
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch ${url}: ${response.status} ${response.statusText}`);
+    }
+    const text = await response.text();
+    console.log(`Raw response from ${url}:`, text);
+    try {
+      return JSON.parse(text);
+    } catch (error) {
+      console.error(`Failed to parse JSON from ${url}:`, error);
+      throw error;
+    }
   }
 
   static get observedAttributes() {
@@ -20,44 +57,6 @@ class ContactFooter extends HTMLElement {
   attributeChangedCallback(name, oldValue, newValue) {
     if (name === 'theme' && oldValue !== newValue) {
       this.updateTheme(newValue);
-    }
-  }
-
-  async fetchContactData() {
-    try {
-      this.showLoading();
-      console.log('Fetching contact data...');
-      const response = await fetch('contact.json', {
-        headers: {
-          'Accept': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const text = await response.text();
-      console.log('Raw response:', text);
-
-      try {
-        this.contactData = JSON.parse(text);
-        console.log('Parsed contact data:', this.contactData);
-        this.updateContent();
-        this.startRotation();
-      } catch (parseError) {
-        console.error('JSON parse error:', parseError);
-        throw new Error('Failed to parse contact data');
-      }
-    } catch (error) {
-      console.error('Error loading contact data:', error);
-      if (this.retryCount < this.maxRetries) {
-        this.retryCount++;
-        console.log(`Retrying... attempt ${this.retryCount} of ${this.maxRetries}`);
-        setTimeout(() => this.fetchContactData(), 1000 * this.retryCount);
-      } else {
-        this.showError();
-      }
     }
   }
 
@@ -97,23 +96,33 @@ class ContactFooter extends HTMLElement {
         100% { opacity: 0.98; }
       }
 
+      @keyframes tickerMove {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(calc(-100% - var(--ticker-gap))); }
+      }
+
       :host {
         display: block;
         --primary-bg: #000000;
         --primary-text: #33ff33;
         --link-color: #33ff33;
+        --secondary-color: #1a5517;
+        --ticker-gap: 3rem;
         font-family: 'DOS', 'Courier New', monospace;
       }
 
       .footer {
         background-color: var(--primary-bg);
         color: var(--primary-text);
-        padding: 0.5rem;
-        height: 1.5rem;
         overflow: hidden;
         position: relative;
         border-top: 2px solid var(--primary-text);
         animation: flicker 10s infinite;
+        height: 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 1rem;
       }
 
       .footer::after {
@@ -129,6 +138,7 @@ class ContactFooter extends HTMLElement {
         );
         background-size: 100% 4px;
         pointer-events: none;
+        z-index: 1;
       }
 
       .footer::before {
@@ -141,13 +151,77 @@ class ContactFooter extends HTMLElement {
         background: rgba(51, 255, 51, 0.1);
         animation: scanline 8s linear infinite;
         pointer-events: none;
+        z-index: 1;
       }
 
-      .container {
+      .name {
+        white-space: nowrap;
+        font-weight: bold;
+        flex: 0 0 auto;
+        margin-right: 2rem;
+      }
+
+      .contact-container {
         display: flex;
         align-items: center;
         justify-content: center;
+        position: relative;
+        z-index: 2;
+        flex: 0 0 auto;
+        margin-right: 2rem;
+      }
+
+      .ticker-container {
+        flex: 1;
         height: 100%;
+        overflow: hidden;
+        position: relative;
+        display: flex;
+        align-items: center;
+      }
+
+      .ticker-wrapper {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
+
+      .ticker-content {
+        position: absolute;
+        white-space: nowrap;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        animation: tickerMove var(--ticker-duration, 30s) linear infinite;
+        padding-left: 100%;
+      }
+
+      .ticker-entry {
+        display: inline-flex;
+        align-items: center;
+        padding: 0 var(--ticker-gap);
+        position: relative;
+      }
+
+      .ticker-entry::before {
+        content: '>';
+        margin-right: 0.5rem;
+        animation: blink 1s step-end infinite;
+      }
+
+      .ticker-entry::after {
+        content: '•';
+        position: absolute;
+        right: 0;
+        color: var(--primary-text);
+        opacity: 0.5;
+      }
+
+      .ticker-content a {
+        color: var(--link-color);
+        text-decoration: underline;
+        margin: 0 0.25rem;
       }
 
       .rotating-links {
@@ -155,7 +229,7 @@ class ContactFooter extends HTMLElement {
         height: 1.5rem;
         overflow: hidden;
         display: inline-block;
-        min-width: 200px;
+        min-width: 150px;
       }
 
       .link-wrapper {
@@ -177,7 +251,7 @@ class ContactFooter extends HTMLElement {
         transform: translateY(-100%);
       }
 
-      a {
+      .contact-container a {
         color: var(--link-color);
         text-decoration: none;
         position: relative;
@@ -187,13 +261,13 @@ class ContactFooter extends HTMLElement {
         white-space: nowrap;
       }
 
-      a:hover {
+      .contact-container a:hover {
         background-color: var(--link-color);
         color: var(--primary-bg);
         text-shadow: none;
       }
 
-      a::before {
+      .contact-container a::before {
         content: '>';
         margin-right: 0.5rem;
         animation: blink 1s step-end infinite;
@@ -223,6 +297,10 @@ class ContactFooter extends HTMLElement {
         .footer {
           animation: none;
         }
+        .ticker-content {
+          animation: none;
+          transform: none;
+        }
       }
     `;
   }
@@ -232,9 +310,15 @@ class ContactFooter extends HTMLElement {
     this.shadowRoot.innerHTML = `
       <style>${styles}</style>
       <footer class="footer" role="contentinfo">
-        <div class="container">
+        <div class="name">Andrew Wooldridge</div>
+        <div class="contact-container">
           <div class="loading" role="status" aria-live="polite">
             LOADING CONTACT DATA
+          </div>
+        </div>
+        <div class="ticker-container">
+          <div class="loading" role="status" aria-live="polite">
+            LOADING BLOG DATA
           </div>
         </div>
       </footer>
@@ -292,11 +376,49 @@ class ContactFooter extends HTMLElement {
     }, 3000);
   }
 
+  startBlogTicker() {
+    if (!this.blogData) return;
+
+    const tickerContainer = this.shadowRoot.querySelector('.ticker-container');
+    const createTickerContent = () => {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'ticker-wrapper';
+
+      const content = document.createElement('div');
+      content.className = 'ticker-content';
+      content.innerHTML = this.blogData.entries.map(entry => {
+        const text = entry.text.replace(/(https?:\/\/\S+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
+        return `<span class="ticker-entry">${text}</span>`;
+      }).join('');
+
+      // Calculate animation duration based on content length
+      const contentLength = content.textContent.length;
+      const baseSpeed = 50; // pixels per second
+      const duration = Math.max(30, contentLength / baseSpeed * 15);
+      content.style.setProperty('--ticker-duration', `${duration}s`);
+
+      wrapper.appendChild(content);
+      return wrapper;
+    };
+
+    tickerContainer.innerHTML = '';
+    const wrapper = createTickerContent();
+    tickerContainer.appendChild(wrapper);
+
+    // Reset animation when it completes
+    const content = wrapper.querySelector('.ticker-content');
+    content.addEventListener('animationend', () => {
+      tickerContainer.innerHTML = '';
+      const newWrapper = createTickerContent();
+      tickerContainer.appendChild(newWrapper);
+    });
+  }
+
   updateContent() {
     if (!this.contactData) return;
 
-    const container = this.shadowRoot.querySelector('.container');
-    container.innerHTML = `
+    const contactContainer = this.shadowRoot.querySelector('.contact-container');
+    contactContainer.innerHTML = `
       <div class="rotating-links">
         <div class="link-wrapper active">
           <a href="mailto:${this.contactData.email}"
@@ -308,20 +430,19 @@ class ContactFooter extends HTMLElement {
     `;
   }
 
-  showLoading() {
-    const container = this.shadowRoot.querySelector('.container');
-    container.innerHTML = `
-      <div class="loading" role="status" aria-live="polite">
-        LOADING CONTACT DATA
-      </div>
-    `;
-  }
-
   showError() {
-    const container = this.shadowRoot.querySelector('.container');
-    container.innerHTML = `
+    const contactContainer = this.shadowRoot.querySelector('.contact-container');
+    const tickerContainer = this.shadowRoot.querySelector('.ticker-container');
+
+    contactContainer.innerHTML = `
       <div class="error" role="alert">
         SYSTEM ERROR: CONTACT DATA NOT FOUND
+      </div>
+    `;
+
+    tickerContainer.innerHTML = `
+      <div class="error" role="alert">
+        SYSTEM ERROR: BLOG DATA NOT FOUND
       </div>
     `;
   }
@@ -330,6 +451,9 @@ class ContactFooter extends HTMLElement {
     this.render();
     if (this.contactData) {
       this.updateContent();
+    }
+    if (this.blogData) {
+      this.startBlogTicker();
     }
   }
 }
