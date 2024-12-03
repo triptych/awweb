@@ -187,21 +187,36 @@ class ContactFooter extends HTMLElement {
         overflow: hidden;
       }
 
+      .ticker-wrapper::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 50px;
+        background: linear-gradient(to right, var(--primary-bg) 0%, transparent 100%);
+        z-index: 3;
+        pointer-events: none;
+      }
+
       .ticker-content {
         position: absolute;
         white-space: nowrap;
         height: 100%;
         display: flex;
-        align-items: center;
+        align-items: baseline;
         animation: tickerMove var(--ticker-duration, 30s) linear infinite;
         padding-left: 100%;
+        margin-top: 2px;
       }
 
       .ticker-entry {
         display: inline-flex;
-        align-items: center;
+        align-items: baseline;
         padding: 0 var(--ticker-gap);
         position: relative;
+        height: 1.5rem;
+        line-height: 1.5rem;
       }
 
       .ticker-entry::before {
@@ -220,13 +235,23 @@ class ContactFooter extends HTMLElement {
 
       .ticker-content a {
         color: var(--link-color);
-        text-decoration: underline;
+        text-decoration: none;
         margin: 0 0.25rem;
+        padding: 0 0.5rem;
+        text-shadow: 0 0 5px var(--link-color);
+        letter-spacing: 1px;
+      }
+
+      .ticker-content a:hover {
+        background-color: var(--link-color);
+        color: var(--primary-bg);
+        text-shadow: none;
       }
 
       .rotating-links {
         position: relative;
         height: 1.5rem;
+        line-height: 1.5rem;
         overflow: hidden;
         display: inline-block;
         min-width: 150px;
@@ -239,6 +264,8 @@ class ContactFooter extends HTMLElement {
         transition: transform 0.5s ease-in-out;
         opacity: 0;
         transform: translateY(100%);
+        height: 1.5rem;
+        line-height: 1.5rem;
       }
 
       .link-wrapper.active {
@@ -259,6 +286,8 @@ class ContactFooter extends HTMLElement {
         text-shadow: 0 0 5px var(--link-color);
         letter-spacing: 1px;
         white-space: nowrap;
+        height: 1.5rem;
+        line-height: 1.5rem;
       }
 
       .contact-container a:hover {
