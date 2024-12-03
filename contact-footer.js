@@ -16,8 +16,8 @@ export class ContactFooter extends HTMLElement {
     try {
       console.log('Initializing footer...');
       const [contactData, blogData] = await Promise.all([
-        this.fetchData('contact.json'),
-        this.fetchData('blog.json')
+        this.fetchData('https://esm.sh/gh/triptych/awweb/contact.json'),
+        this.fetchData('https://esm.sh/gh/triptych/awweb/blog.json')
       ]);
 
       console.log('Contact data loaded:', contactData);
