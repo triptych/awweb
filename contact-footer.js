@@ -1,4 +1,5 @@
-class ContactFooter extends HTMLElement {
+// Define and export the ContactFooter class
+export class ContactFooter extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
@@ -487,4 +488,5 @@ class ContactFooter extends HTMLElement {
   }
 }
 
+// Register the custom element
 customElements.define('contact-footer', ContactFooter);
